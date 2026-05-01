@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VPS Upload</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:            #060606;
+  --surface:       #0e0e0e;
+  --surface2:      #141414;
+  --border:        #1c1c1c;
+  --border-bright: #282828;
+  --green:         #39ff14;
+  --green-dim:     #1c6b08;
+  --green-glow:    rgba(57,255,20,.12);
+  --blue:          #4fc3f7;
+  --pink:          #f06292;
+  --amber:         #ffb74d;
+  --gray:          #666;
+  --text:          #c0c0c0;
+  --text-dim:      #484848;
+  --danger:        #ff5252;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  min-height: 100vh;
+  background-image:
+    linear-gradient(rgba(57,255,20,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(57,255,20,.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* ── Header ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 72px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(6,6,6,.9);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-mark {
+  width: 42px;
+  height: 42px;
+  border: 2px solid var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--green);
+  font-weight: 700;
+}
+
+.logo-text {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .35em;
+  color: var(--green);
+  text-transform: uppercase;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: blink 2.4s infinite;
+}
+
+@keyframes blink {
+  0%,100% { opacity:1; }
+  50%      { opacity:.25; }
+}
+
+/* ── Main ── */
+main {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 64px 80px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+/* ── Drop zone ── */
+.drop-zone {
+  border: 1px dashed var(--border-bright);
+  background: var(--surface);
+  padding: 200px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, box-shadow .2s;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+.drop-zone::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--green-glow);
+  opacity: 0;
+  transition: opacity .2s;
+  pointer-events: none;
+}
+
+.drop-zone:hover,
+.drop-zone.over {
+  border-color: var(--green);
+  border-style: solid;
+}
+
+.drop-zone:hover::after,
+.drop-zone.over::after { opacity: 1; }
+
+.drop-zone.over {
+  box-shadow: 0 0 0 3px rgba(57,255,20,.15), inset 0 0 40px rgba(57,255,20,.04);
+  animation: ring-pulse .7s infinite;
+}
+
+@keyframes ring-pulse {
+  0%,100% { box-shadow: 0 0 0 3px rgba(57,255,20,.15); }
+  50%      { box-shadow: 0 0 0 7px rgba(57,255,20,.04); }
+}
+
+.drop-arrow {
+  display: block;
+  font-size: 52px;
+  margin-bottom: 14px;
+  color: var(--text-dim);
+  transition: color .2s, transform .2s;
+  position: relative;
+  z-index: 1;
+}
+
+.drop-zone:hover .drop-arrow,
+.drop-zone.over .drop-arrow {
+  color: var(--green);
+  transform: translateY(-4px);
+}
+
+.drop-label {
+  font-size: 16px;
+  color: var(--text-dim);
+  position: relative;
+  z-index: 1;
+}
+
+.drop-label em {
+  color: var(--green);
+  font-style: normal;
+  font-weight: 500;
+}
+
+/* ── Section label ── */
+.label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .25em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+/* ── Project input ── */
+.project-wrap {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border-bright);
+  background: var(--surface);
+  transition: border-color .2s;
+}
+
+.project-wrap:focus-within { border-color: var(--green); }
+
+.project-prefix {
+  padding: 10px 14px;
+  color: var(--green-dim);
+  border-right: 1px solid var(--border);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.project-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 16px 18px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 16px;
+  caret-color: var(--green);
+}
+
+.project-input::placeholder { color: var(--text-dim); }
+
+/* ── Chips ── */
+.chips-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chips-empty {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.refresh-btn {
+  background: none;
+  border: 1px solid var(--border-bright);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 11px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .05em;
+  margin-left: auto;
+}
+
+.refresh-btn:hover { border-color: var(--green); color: var(--green); }
+
+.chip {
+  padding: 3px 10px;
+  border: 1px solid var(--border-bright);
+  background: var(--surface2);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.chip:hover {
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(57,255,20,.05);
+}
+
+/* ── File list ── */
+.file-list { display: flex; flex-direction: column; gap: 2px; }
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border-left: 2px solid transparent;
+  animation: slide-in .18s ease;
+}
+
+@keyframes slide-in {
+  from { opacity:0; transform:translateX(-6px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+.file-item[data-type="images"] { border-left-color: var(--pink); }
+.file-item[data-type="videos"] { border-left-color: var(--blue); }
+.file-item[data-type="docs"]   { border-left-color: var(--amber); }
+.file-item[data-type="other"]  { border-left-color: var(--gray); }
+
+.file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  color: var(--text-dim);
+  font-size: 11px;
+  min-width: 56px;
+  text-align: right;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: 2px 7px;
+  text-transform: uppercase;
+}
+
+.badge.images { color: var(--pink);  background: rgba(240,98,146,.1); }
+.badge.videos { color: var(--blue);  background: rgba(79,195,247,.1); }
+.badge.docs   { color: var(--amber); background: rgba(255,183,77,.1); }
+.badge.other  { color: var(--gray);  background: rgba(102,102,102,.1); }
+
+.rm-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  transition: color .15s;
+}
+
+.rm-btn:hover { color: var(--danger); }
+
+/* ── Upload button ── */
+.progress {
+  height: 2px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--green);
+  width: 0%;
+  transition: width .4s ease;
+  box-shadow: 0 0 10px var(--green);
+}
+
+.upload-btn {
+  width: 100%;
+  padding: 22px;
+  background: transparent;
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: color .25s;
+}
+
+.upload-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--green);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .3s ease;
+  z-index: 0;
+}
+
+.upload-btn:hover:not(:disabled)::before { transform: scaleX(1); }
+.upload-btn:hover:not(:disabled) { color: var(--bg); }
+
+.upload-btn span { position: relative; z-index: 1; }
+
+.upload-btn:disabled {
+  border-color: var(--border-bright);
+  color: var(--text-dim);
+  cursor: not-allowed;
+}
+
+.upload-btn:disabled::before { display: none; }
+
+/* ── Results ── */
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border-left: 2px solid var(--green);
+  animation: slide-in .25s ease;
+}
+
+.result-item.err { border-left-color: var(--danger); }
+
+.result-path {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.copy-btn {
+  background: none;
+  border: 1px solid var(--border-bright);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: .1em;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+
+.copy-btn:hover       { border-color: var(--green); color: var(--green); }
+.copy-btn.ok          { border-color: var(--green); color: var(--green); }
+
+#fileInput { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">↑</div>
+    <span class="logo-text">VPS Upload</span>
+  </div>
+  <div class="header-right">
+    <span class="status"><span class="dot"></span>75.119.131.8</span>
+    <span>~/media</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- Drop zone -->
+  <div>
+    <div class="drop-zone" id="dropZone">
+      <span class="drop-arrow">⬆</span>
+      <p class="drop-label"><em>Arrastra archivos aquí</em> o haz clic para seleccionar</p>
+    </div>
+    <input type="file" id="fileInput" multiple>
+  </div>
+
+  <!-- Project -->
+  <div>
+    <div class="label">Proyecto <span style="font-weight:300;letter-spacing:0">(opcional)</span></div>
+    <div class="project-wrap">
+      <span class="project-prefix">/home/claude/projects/</span>
+      <input class="project-input" id="projectInput" type="text"
+             placeholder="sin proyecto · se guardará en la raíz" autocomplete="off">
+    </div>
+    <div class="chips-row">
+      <div class="chips" id="chips"></div>
+      <span class="chips-empty" id="chipsEmpty" style="display:none">Sin proyectos en /home/claude/projects</span>
+      <button class="refresh-btn" onclick="loadProjects()">↺ actualizar</button>
+    </div>
+  </div>
+
+  <!-- File list -->
+  <div id="filesSection" style="display:none">
+    <div class="label">Archivos seleccionados — <span id="fileCount">0</span></div>
+    <div class="file-list" id="fileList"></div>
+  </div>
+
+  <!-- Upload -->
+  <div>
+    <div class="progress" id="progressBar" style="display:none">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <button class="upload-btn" id="uploadBtn" disabled>
+      <span id="uploadLabel">Selecciona archivos para subir</span>
+    </button>
+  </div>
+
+  <!-- Results -->
+  <div id="resultsSection" style="display:none">
+    <div class="label">Resultado</div>
+    <div id="results"></div>
+  </div>
+
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const dropZone     = $('dropZone');
+const fileInput    = $('fileInput');
+const filesSection = $('filesSection');
+const fileList     = $('fileList');
+const fileCount    = $('fileCount');
+const uploadBtn    = $('uploadBtn');
+const uploadLabel  = $('uploadLabel');
+const progressBar  = $('progressBar');
+const progressFill = $('progressFill');
+const resultsSection = $('resultsSection');
+const results      = $('results');
+const projectInput = $('projectInput');
+const chips        = $('chips');
+
+let selected = [];
+
+// ── Type detection ──
+const TYPES = {
+  images: new Set(['png','jpg','jpeg','gif','webp','heic','svg','bmp']),
+  videos: new Set(['mp4','mov','avi','mkv','webm','m4v']),
+  docs:   new Set(['pdf','md','txt','doc','docx']),
+};
+
+function detectType(name) {
+  const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
+  for (const [t, s] of Object.entries(TYPES)) if (s.has(ext)) return t;
+  return 'other';
+}
+
+function fmtSize(b) {
+  if (b < 1024)        return b + ' B';
+  if (b < 1048576)     return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Drag & drop ──
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  addFiles([...e.dataTransfer.files]);
+});
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => addFiles([...fileInput.files]));
+
+function addFiles(newFiles) {
+  const seen = new Set(selected.map(f => f.name));
+  newFiles.filter(f => !seen.has(f.name)).forEach(f => selected.push(f));
+  render();
+}
+
+function removeFile(i) {
+  selected.splice(i, 1);
+  render();
+}
+
+function render() {
+  fileCount.textContent = selected.length;
+
+  if (!selected.length) {
+    filesSection.style.display = 'none';
+    uploadBtn.disabled = true;
+    uploadLabel.textContent = 'Selecciona archivos para subir';
+    return;
+  }
+
+  filesSection.style.display = 'block';
+  uploadBtn.disabled = false;
+  uploadLabel.textContent = `Subir ${selected.length} archivo${selected.length > 1 ? 's' : ''} al VPS`;
+
+  fileList.innerHTML = selected.map((f, i) => {
+    const t = detectType(f.name);
+    return `<div class="file-item" data-type="${t}">
+      <span class="file-name">${esc(f.name)}</span>
+      <span class="file-size">${fmtSize(f.size)}</span>
+      <span class="badge ${t}">${t}</span>
+      <button class="rm-btn" onclick="removeFile(${i})">×</button>
+    </div>`;
+  }).join('');
+}
+
+// ── Projects ──
+const chipsEl    = $('chips');
+const chipsEmpty = $('chipsEmpty');
+
+function loadProjects() {
+  chipsEl.innerHTML = '<span style="color:var(--text-dim);font-size:11px">cargando…</span>';
+  chipsEmpty.style.display = 'none';
+  fetch('/api/projects')
+    .then(r => r.json())
+    .then(list => {
+      if (!list.length) {
+        chipsEl.innerHTML = '';
+        chipsEmpty.style.display = 'inline';
+        return;
+      }
+      chipsEmpty.style.display = 'none';
+      chipsEl.innerHTML = list.map(p =>
+        `<button class="chip" onclick="setProject('${esc(p)}')">${esc(p)}</button>`
+      ).join('');
+    })
+    .catch(() => {
+      chipsEl.innerHTML = '';
+      chipsEmpty.style.display = 'inline';
+    });
+}
+
+loadProjects();
+
+function setProject(name) { projectInput.value = name; }
+
+// ── Upload ──
+uploadBtn.addEventListener('click', async () => {
+  if (!selected.length) return;
+
+  const fd = new FormData();
+  fd.append('project', projectInput.value.trim());
+  selected.forEach(f => fd.append('files', f));
+
+  uploadBtn.disabled = true;
+  uploadLabel.textContent = 'Subiendo…';
+  progressBar.style.display = 'block';
+  progressFill.style.width = '15%';
+  resultsSection.style.display = 'none';
+  results.innerHTML = '';
+
+  try {
+    progressFill.style.width = '55%';
+    const res = await fetch('/api/upload', { method: 'POST', body: fd });
+    progressFill.style.width = '100%';
+
+    const data = await res.json();
+    renderResults(data);
+    loadProjects();
+
+    selected = [];
+    fileInput.value = '';
+    render();
+  } catch (e) {
+    resultsSection.style.display = 'block';
+    results.innerHTML = `<div class="result-item err">
+      <span class="result-path">Error de red: ${esc(e.message)}</span>
+    </div>`;
+  } finally {
+    setTimeout(() => {
+      progressBar.style.display = 'none';
+      progressFill.style.width = '0%';
+    }, 700);
+    uploadBtn.disabled = false;
+    render();
+  }
+});
+
+function renderResults(data) {
+  resultsSection.style.display = 'block';
+  results.innerHTML = data.map(r => {
+    if (r.ok) {
+      return `<div class="result-item">
+        <span class="result-path">${esc(r.path)}</span>
+        <button class="copy-btn" data-path="${esc(r.path)}" onclick="copyPath(this)">COPIAR</button>
+      </div>`;
+    }
+    return `<div class="result-item err">
+      <span class="result-path"><strong>${esc(r.file)}</strong> — ${esc(r.error || 'error')}</span>
+    </div>`;
+  }).join('');
+
+  // Auto-copy last successful path
+  const last = [...data].reverse().find(r => r.ok);
+  if (last) navigator.clipboard.writeText(last.path).catch(() => {});
+}
+
+function copyPath(btn) {
+  navigator.clipboard.writeText(btn.dataset.path).then(() => {
+    btn.textContent = '✓ COPIADO';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'COPIAR'; btn.classList.remove('ok'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>
