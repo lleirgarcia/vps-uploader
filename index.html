@@ -466,7 +466,7 @@ main {
   <div>
     <div class="drop-zone" id="dropZone">
       <span class="drop-arrow">⬆</span>
-      <p class="drop-label"><em>Arrastra archivos aquí</em> o haz clic para seleccionar</p>
+      <p class="drop-label"><em>Arrastra archivos aquí</em>, haz clic para seleccionar<br><span style="font-size:12px;opacity:.5">o pega una imagen con Ctrl+V / ⌘+V</span></p>
     </div>
     <input type="file" id="fileInput" multiple>
   </div>
@@ -551,6 +551,21 @@ function fmtSize(b) {
 function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ── Paste from clipboard ──
+document.addEventListener('paste', e => {
+  const items = [...(e.clipboardData?.items || [])];
+  const imageItems = items.filter(i => i.kind === 'file' && i.type.startsWith('image/'));
+  if (!imageItems.length) return;
+  e.preventDefault();
+  const files = imageItems.map(item => {
+    const blob = item.getAsFile();
+    const ext  = item.type.split('/')[1]?.replace('jpeg','jpg') || 'png';
+    const ts   = new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,15);
+    return new File([blob], `clipboard-${ts}.${ext}`, { type: item.type });
+  });
+  addFiles(files);
+});
 
 // ── Drag & drop ──
 dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('over'); });
