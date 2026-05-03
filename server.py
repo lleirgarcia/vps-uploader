@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, os
+import sys, os, shutil
 from flask import Flask, request, jsonify, send_from_directory
 
 import subprocess as sp
@@ -13,6 +13,10 @@ app = Flask(__name__)
 
 VPS_HOST = "vps"
 VPS_MEDIA = "~/media"
+
+LOCAL_PROJECTS_DIR = "/home/claude/projects"
+LOCAL_MEDIA_DIR = os.path.expanduser("~/media")
+LOCAL_MODE = os.path.isdir(LOCAL_PROJECTS_DIR)
 
 TYPES = {
     "images": {"png","jpg","jpeg","gif","webp","heic","svg","bmp"},
@@ -34,6 +38,12 @@ def index():
 @app.route("/api/projects")
 def list_projects():
     try:
+        if LOCAL_MODE:
+            projects = sorted(
+                d for d in os.listdir(LOCAL_PROJECTS_DIR)
+                if os.path.isdir(os.path.join(LOCAL_PROJECTS_DIR, d))
+            )
+            return jsonify(projects)
         r = sp.run(["ssh", VPS_HOST, "ls /home/claude/projects/"],
                    capture_output=True, text=True, timeout=5)
         projects = [p for p in r.stdout.strip().splitlines() if p]
@@ -59,6 +69,18 @@ def upload():
             new_name = f"{ts}-{name}.{ext}"
         else:
             new_name = f"{ts}-{f.filename}"
+
+        if LOCAL_MODE:
+            dest_dir  = os.path.join(LOCAL_MEDIA_DIR, project, subdir) if project else os.path.join(LOCAL_MEDIA_DIR, subdir)
+            dest_path = os.path.join(dest_dir, new_name)
+            try:
+                os.makedirs(dest_dir, exist_ok=True)
+                f.save(dest_path)
+                results.append({"file": f.filename, "path": dest_path,
+                                 "subdir": subdir, "ok": True})
+            except Exception as e:
+                results.append({"file": f.filename, "error": str(e), "ok": False})
+            continue
 
         dest_dir  = f"{VPS_MEDIA}/{project}/{subdir}" if project else f"{VPS_MEDIA}/{subdir}"
         dest_path = f"{dest_dir}/{new_name}"
@@ -86,9 +108,7 @@ def upload():
     return jsonify(results)
 
 if __name__ == "__main__":
-    def _open():
-        import time; time.sleep(0.8)
-        webbrowser.open("http://localhost:7474")
-    threading.Thread(target=_open, daemon=True).start()
-    print("\n  VPS Uploader → http://localhost:7474\n  Ctrl+C para salir\n")
-    app.run(port=7474, debug=False, use_reloader=False)
+    port = int(os.environ.get("PORT", 7474))
+    host = os.environ.get("HOST", "0.0.0.0")
+    print(f"\n  VPS Uploader → http://localhost:{port}\n  Ctrl+C para salir\n")
+    app.run(host=host, port=port, debug=False, use_reloader=False)

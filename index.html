@@ -702,15 +702,40 @@ function renderResults(data) {
 
   // Auto-copy last successful path
   const last = [...data].reverse().find(r => r.ok);
-  if (last) navigator.clipboard.writeText(last.path).catch(() => {});
+  if (last) copyText(last.path);
+}
+
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  }
+  return fallbackCopy(text);
+}
+
+function fallbackCopy(text) {
+  return new Promise((resolve, reject) => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    } catch (e) { reject(e); }
+  });
 }
 
 function copyPath(btn) {
-  navigator.clipboard.writeText(btn.dataset.path).then(() => {
+  copyText(btn.dataset.path).then(() => {
     btn.textContent = '✓ COPIADO';
     btn.classList.add('ok');
     setTimeout(() => { btn.textContent = 'COPIAR'; btn.classList.remove('ok'); }, 2000);
-  });
+  }).catch(() => {});
 }
 </script>
 </body>
