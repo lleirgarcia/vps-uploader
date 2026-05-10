@@ -70,3 +70,9 @@ En `server.py`:
 - `VPS_HOST = "vps"` — alias SSH del servidor.
 - `VPS_MEDIA = "~/media"` — destino raíz en el VPS.
 - Variables de entorno opcionales: `PORT` (por defecto `7474`), `HOST` (por defecto `0.0.0.0`).
+
+<!-- AUTO-DOC START -->
+## Estado actual
+
+Mini app local (Flask + HTML estático) para subir ficheros al VPS por SCP, organizándolos automáticamente por proyecto y tipo. Funcional con soporte para pegado de imágenes desde portapapeles (Ctrl+V / ⌘+V) y modo local automático cuando se ejecuta dentro del VPS. Documentación completa; listo para usar.
+<!-- AUTO-DOC END -->
