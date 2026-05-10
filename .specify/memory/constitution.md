@@ -3,7 +3,7 @@ SYNC IMPACT REPORT
 ==================
 Version change: (template) → 1.0.0
 Bump rationale: Initial seed of the constitution from the shared base
-template at `../../.spec-kit-shared/constitution-base.md`. Project-specific
+template at `~/.claude/spec-kit/constitution-base.md`. Project-specific
 principles still need to be filled in (see placeholder sections below).
 The "Spec Lifecycle" section is adopted verbatim from the shared base.
 
@@ -29,7 +29,7 @@ Follow-up TODOs:
 # vps-uploader Constitution
 
 > **Note**: This file was seeded from the shared base constitution template
-> at `../../.spec-kit-shared/constitution-base.md`. Adapt the placeholder
+> at `~/.claude/spec-kit/constitution-base.md`. Adapt the placeholder
 > principles to the project's real, non-negotiable rules. The "Spec
 > Lifecycle" section is intentionally identical across projects — keep it
 > verbatim.
