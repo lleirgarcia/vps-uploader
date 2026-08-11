@@ -372,6 +372,7 @@ main {
 .file-item[data-type="images"] { border-left-color: var(--pink); }
 .file-item[data-type="videos"] { border-left-color: var(--blue); }
 .file-item[data-type="docs"]   { border-left-color: var(--amber); }
+.file-item[data-type="audio"]  { border-left-color: var(--green); }
 .file-item[data-type="other"]  { border-left-color: var(--gray); }
 
 .file-name {
@@ -399,7 +400,66 @@ main {
 .badge.images { color: var(--pink);  background: rgba(232,143,181,.1); }
 .badge.videos { color: var(--blue);  background: rgba(143,201,232,.1); }
 .badge.docs   { color: var(--amber); background: rgba(217,178,106,.12); }
+.badge.audio  { color: var(--green); background: rgba(232,163,61,.1); }
 .badge.other  { color: var(--gray);  background: rgba(138,127,109,.12); }
+
+/* ── Audio recorder ── */
+.rec-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.rec-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 14px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border-bright);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.rec-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+.rec-dot-icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex-shrink: 0;
+}
+
+.rec-btn.recording {
+  border-color: var(--danger);
+  color: var(--danger);
+  box-shadow: 0 0 16px rgba(224,82,82,.2);
+}
+
+.rec-btn.recording .rec-dot-icon { animation: blink 1s infinite; }
+
+.rec-time {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--danger);
+  min-width: 54px;
+}
+
+.rec-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+}
 
 .rm-btn {
   background: none;
@@ -504,6 +564,32 @@ main {
 .result-path.clickable:hover { color: var(--green); }
 .result-path.clickable:active { color: var(--green); opacity: .7; }
 
+.result-transcript {
+  border-radius: 8px;
+  margin: 4px 0 8px 14px;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border-left: 2px solid var(--green-dim);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  animation: slide-in .25s ease;
+}
+
+.result-transcript:hover {
+  border-left-color: var(--green);
+  background: rgba(232,163,61,.05);
+}
+
+.result-transcript.err-text {
+  border-left-color: var(--danger);
+  color: var(--text-dim);
+  font-style: italic;
+  cursor: default;
+}
+
 .copy-btn {
   background: none;
   border-radius: 6px;
@@ -546,6 +632,19 @@ main {
       <p class="drop-label"><em>Arrastra archivos aquí</em>, haz clic para seleccionar<br><span style="font-size:12px;opacity:.5">o pega una imagen con Ctrl+V / ⌘+V</span></p>
     </div>
     <input type="file" id="fileInput" multiple>
+  </div>
+
+  <!-- Audio recorder -->
+  <div>
+    <div class="label">Grabar audio</div>
+    <div class="rec-wrap">
+      <button class="rec-btn" id="recBtn">
+        <span class="rec-dot-icon"></span>
+        <span id="recLabel">Grabar</span>
+      </button>
+      <span class="rec-time" id="recTime" style="display:none">00:00</span>
+      <span class="rec-hint" id="recHint">al parar se añade a la lista de subida</span>
+    </div>
   </div>
 
   <!-- Project -->
@@ -615,9 +714,16 @@ const TYPES = {
   images: new Set(['png','jpg','jpeg','gif','webp','heic','svg','bmp']),
   videos: new Set(['mp4','mov','avi','mkv','webm','m4v']),
   docs:   new Set(['pdf','md','txt','doc','docx']),
+  audio:  new Set(['webm','ogg','mp3','wav','m4a','opus','aac','flac']),
 };
 
-function detectType(name) {
+const MIME_TYPES = { image: 'images', video: 'videos', 'audio': 'audio' };
+
+function detectType(file) {
+  // El MIME desambigua .webm (audio del micro vs vídeo)
+  const prefix = (file.type || '').split('/')[0];
+  if (MIME_TYPES[prefix]) return MIME_TYPES[prefix];
+  const name = file.name;
   const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
   for (const [t, s] of Object.entries(TYPES)) if (s.has(ext)) return t;
   return 'other';
@@ -646,6 +752,74 @@ document.addEventListener('paste', e => {
     return new File([blob], `clipboard-${ts}.${ext}`, { type: item.type });
   });
   addFiles(files);
+});
+
+// ── Audio recorder ──
+const recBtn   = $('recBtn');
+const recLabel = $('recLabel');
+const recTime  = $('recTime');
+
+let mediaRecorder = null;
+let recChunks = [];
+let recStream = null;
+let recTimer  = null;
+let recStart  = 0;
+
+function pickAudioMime() {
+  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+  if (!window.MediaRecorder) return '';
+  return candidates.find(t => MediaRecorder.isTypeSupported(t)) || '';
+}
+
+recBtn.addEventListener('click', async () => {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    return;
+  }
+
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+    showToast('Micrófono no disponible — hace falta HTTPS o localhost');
+    return;
+  }
+
+  try {
+    recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch {
+    showToast('Permiso de micrófono denegado');
+    return;
+  }
+
+  const mime = pickAudioMime();
+  mediaRecorder = new MediaRecorder(recStream, mime ? { mimeType: mime } : undefined);
+  recChunks = [];
+
+  mediaRecorder.ondataavailable = e => { if (e.data.size) recChunks.push(e.data); };
+
+  mediaRecorder.onstop = () => {
+    recStream.getTracks().forEach(t => t.stop());
+    clearInterval(recTimer);
+    recBtn.classList.remove('recording');
+    recLabel.textContent = 'Grabar';
+    recTime.style.display = 'none';
+
+    const type = mediaRecorder.mimeType || mime || 'audio/webm';
+    const ext  = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
+    const ts   = new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,15);
+    const file = new File([new Blob(recChunks, { type })], `audio-${ts}.${ext}`, { type });
+    addFiles([file]);
+    showToast('Grabación añadida a la lista');
+  };
+
+  mediaRecorder.start();
+  recStart = Date.now();
+  recBtn.classList.add('recording');
+  recLabel.textContent = 'Parar';
+  recTime.style.display = 'inline';
+  recTime.textContent = '00:00';
+  recTimer = setInterval(() => {
+    const s = Math.floor((Date.now() - recStart) / 1000);
+    recTime.textContent = String(Math.floor(s / 60)).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0');
+  }, 500);
 });
 
 // ── Drag & drop ──
@@ -685,7 +859,7 @@ function render() {
   uploadLabel.textContent = `Subir ${selected.length} archivo${selected.length > 1 ? 's' : ''} al VPS`;
 
   fileList.innerHTML = selected.map((f, i) => {
-    const t = detectType(f.name);
+    const t = detectType(f);
     return `<div class="file-item" data-type="${t}">
       <span class="file-name">${esc(f.name)}</span>
       <span class="file-size">${fmtSize(f.size)}</span>
@@ -790,7 +964,8 @@ uploadBtn.addEventListener('click', async () => {
   selected.forEach(f => fd.append('files', f));
 
   uploadBtn.disabled = true;
-  uploadLabel.textContent = 'Subiendo…';
+  const hasAudio = selected.some(f => detectType(f) === 'audio');
+  uploadLabel.textContent = hasAudio ? 'Subiendo y transcribiendo…' : 'Subiendo…';
   progressBar.style.display = 'block';
   progressFill.style.width = '15%';
   resultsSection.style.display = 'none';
@@ -831,18 +1006,34 @@ function renderResults(data) {
   resultsSection.style.display = 'block';
   results.innerHTML = data.map(r => {
     if (r.ok) {
+      let extra = '';
+      if (r.transcript) {
+        extra = `<div class="result-transcript" data-text="${esc(r.transcript)}" title="Click para copiar la transcripción" onclick="copyTranscript(this)">${esc(r.transcript)}</div>`;
+      } else if (r.transcript_error) {
+        extra = `<div class="result-transcript err-text">transcripción falló — ${esc(r.transcript_error)}</div>`;
+      }
       return `<div class="result-item">
         <span class="result-path clickable" data-path="${esc(r.path)}" title="Click para copiar" onclick="copyPath(this)">${esc(r.path)}</span>
-      </div>`;
+      </div>${extra}`;
     }
     return `<div class="result-item err">
       <span class="result-path"><strong>${esc(r.file)}</strong> — ${esc(r.error || 'error')}</span>
     </div>`;
   }).join('');
 
-  // Auto-copy last successful path
+  // Auto-copy: la transcripción si la hay; si no, la ruta del último subido
   const last = [...data].reverse().find(r => r.ok);
-  if (last) copyText(last.path);
+  if (last) {
+    const text = last.transcript || last.path;
+    const okMsg = last.transcript ? 'Transcripción copiada al portapapeles' : `Copiado al portapapeles: ${last.path}`;
+    copyText(text)
+      .then(() => showToast(okMsg))
+      .catch(() => showToast('Subido · no se pudo copiar — haz click para copiar'));
+  }
+}
+
+function copyTranscript(el) {
+  copyText(el.dataset.text).then(() => showToast('Transcripción copiada al portapapeles')).catch(() => {});
 }
 
 function copyText(text) {

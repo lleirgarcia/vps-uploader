@@ -22,9 +22,42 @@ TYPES = {
     "images": {"png","jpg","jpeg","gif","webp","heic","svg","bmp"},
     "videos": {"mp4","mov","avi","mkv","webm","m4v"},
     "docs":   {"pdf","md","txt","doc","docx"},
+    "audio":  {"webm","ogg","mp3","wav","m4a","opus","aac","flac"},
 }
 
-def detect_subdir(filename):
+# ── Transcripción con faster-whisper ──
+# El modelo se carga una sola vez y de forma perezosa: arrancar el servidor no
+# debe costar los ~2s de carga si nadie sube audio.
+WHISPER_MODEL   = os.environ.get("WHISPER_MODEL", "small")
+WHISPER_LANG    = os.environ.get("WHISPER_LANG", "es")
+WHISPER_THREADS = int(os.environ.get("WHISPER_THREADS", "2"))  # VPS compartido: no acaparar los 4 núcleos
+
+_whisper = None
+_whisper_lock = threading.Lock()
+
+def transcribe(path):
+    global _whisper
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError:
+        return None
+    with _whisper_lock:
+        if _whisper is None:
+            _whisper = WhisperModel(WHISPER_MODEL, device="cpu",
+                                    compute_type="int8", cpu_threads=WHISPER_THREADS)
+        segments, _info = _whisper.transcribe(path, language=WHISPER_LANG,
+                                              vad_filter=True, beam_size=1)
+        return " ".join(s.text.strip() for s in segments).strip()
+
+MIME_SUBDIRS = {"image": "images", "video": "videos", "audio": "audio"}
+
+def detect_subdir(filename, mimetype=None):
+    # El MIME del navegador desambigua extensiones compartidas (.webm es audio
+    # en las grabaciones del micro y vídeo en un screencast).
+    if mimetype:
+        prefix = mimetype.split("/", 1)[0].lower()
+        if prefix in MIME_SUBDIRS:
+            return MIME_SUBDIRS[prefix]
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     for subdir, exts in TYPES.items():
         if ext in exts:
@@ -61,7 +94,7 @@ def upload():
         if not f.filename:
             continue
 
-        subdir = detect_subdir(f.filename)
+        subdir = detect_subdir(f.filename, f.mimetype)
         ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
         if "." in f.filename:
@@ -76,8 +109,20 @@ def upload():
             try:
                 os.makedirs(dest_dir, exist_ok=True)
                 f.save(dest_path)
-                results.append({"file": f.filename, "path": dest_path,
-                                 "subdir": subdir, "ok": True})
+                entry = {"file": f.filename, "path": dest_path,
+                         "subdir": subdir, "ok": True}
+                if subdir == "audio":
+                    try:
+                        text = transcribe(dest_path)
+                        if text is not None:
+                            txt_path = dest_path.rsplit(".", 1)[0] + ".txt"
+                            with open(txt_path, "w") as tf:
+                                tf.write(text + "\n")
+                            entry["transcript"] = text
+                            entry["transcript_path"] = txt_path
+                    except Exception as e:
+                        entry["transcript_error"] = str(e)
+                results.append(entry)
             except Exception as e:
                 results.append({"file": f.filename, "error": str(e), "ok": False})
             continue
