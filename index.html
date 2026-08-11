@@ -5,24 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VPS Upload</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:            #060606;
-  --surface:       #0e0e0e;
-  --surface2:      #141414;
-  --border:        #1c1c1c;
-  --border-bright: #282828;
-  --green:         #39ff14;
-  --green-dim:     #1c6b08;
-  --green-glow:    rgba(57,255,20,.12);
-  --blue:          #4fc3f7;
-  --pink:          #f06292;
-  --amber:         #ffb74d;
-  --gray:          #666;
-  --text:          #c0c0c0;
-  --text-dim:      #484848;
-  --danger:        #ff5252;
+  --bg:            #0c0a07;
+  --surface:       #15110b;
+  --surface2:      #1e180f;
+  --border:        #2c251a;
+  --border-bright: #3a3122;
+  --green:         #e8a33d;
+  --green-dim:     #8a6423;
+  --green-glow:    rgba(232,163,61,.12);
+  --blue:          #8fc9e8;
+  --pink:          #e88fb5;
+  --amber:         #d9b26a;
+  --gray:          #8a7f6d;
+  --text:          #f1e9db;
+  --text-dim:      #7a6d58;
+  --danger:        #e05252;
 }
 
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -34,8 +34,8 @@ body {
   font-size: 18px;
   min-height: 100vh;
   background-image:
-    linear-gradient(rgba(57,255,20,.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(57,255,20,.025) 1px, transparent 1px);
+    linear-gradient(rgba(232,163,61,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,163,61,.025) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
@@ -47,7 +47,7 @@ header {
   padding: 0 48px;
   height: 72px;
   border-bottom: 1px solid var(--border);
-  background: rgba(6,6,6,.9);
+  background: rgba(12,10,7,.9);
   backdrop-filter: blur(8px);
   position: sticky;
   top: 0;
@@ -63,6 +63,7 @@ header {
 .logo-mark {
   width: 42px;
   height: 42px;
+  border-radius: 50%;
   border: 2px solid var(--green);
   display: flex;
   align-items: center;
@@ -73,9 +74,10 @@ header {
 }
 
 .logo-text {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: .35em;
+  font-family: 'Anton', 'Arial Narrow', Impact, sans-serif;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: .06em;
   color: var(--green);
   text-transform: uppercase;
 }
@@ -120,6 +122,7 @@ main {
 /* ── Drop zone ── */
 .drop-zone {
   border: 1px dashed var(--border-bright);
+  border-radius: 14px;
   background: var(--surface);
   padding: 200px 24px;
   text-align: center;
@@ -150,13 +153,13 @@ main {
 .drop-zone.over::after { opacity: 1; }
 
 .drop-zone.over {
-  box-shadow: 0 0 0 3px rgba(57,255,20,.15), inset 0 0 40px rgba(57,255,20,.04);
+  box-shadow: 0 0 0 3px rgba(232,163,61,.15), inset 0 0 40px rgba(232,163,61,.04);
   animation: ring-pulse .7s infinite;
 }
 
 @keyframes ring-pulse {
-  0%,100% { box-shadow: 0 0 0 3px rgba(57,255,20,.15); }
-  50%      { box-shadow: 0 0 0 7px rgba(57,255,20,.04); }
+  0%,100% { box-shadow: 0 0 0 3px rgba(232,163,61,.15); }
+  50%      { box-shadow: 0 0 0 7px rgba(232,163,61,.04); }
 }
 
 .drop-arrow {
@@ -202,6 +205,8 @@ main {
 .project-wrap {
   display: flex;
   align-items: stretch;
+  border-radius: 10px;
+  overflow: hidden;
   border: 1px solid var(--border-bright);
   background: var(--surface);
   transition: border-color .2s;
@@ -254,8 +259,36 @@ main {
   font-style: italic;
 }
 
+.chips-row-recent {
+  margin-top: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.chips-sublabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .25em;
+  color: var(--green-dim);
+  text-transform: uppercase;
+  margin-right: 4px;
+  align-self: center;
+}
+
+.chip.chip-recent {
+  border-color: var(--green-dim);
+  color: var(--green);
+  background: rgba(232,163,61,.04);
+}
+
+.chip.chip-recent:hover {
+  border-color: var(--green);
+  background: rgba(232,163,61,.08);
+}
+
 .refresh-btn {
   background: none;
+  border-radius: 6px;
   border: 1px solid var(--border-bright);
   color: var(--text-dim);
   font-family: inherit;
@@ -270,12 +303,13 @@ main {
 .refresh-btn:hover { border-color: var(--green); color: var(--green); }
 
 .chip {
-  padding: 3px 10px;
+  padding: 8px 16px;
+  border-radius: 999px;
   border: 1px solid var(--border-bright);
   background: var(--surface2);
-  color: var(--text-dim);
+  color: var(--text);
   font-family: inherit;
-  font-size: 11px;
+  font-size: 14px;
   cursor: pointer;
   transition: all .15s;
 }
@@ -283,13 +317,44 @@ main {
 .chip:hover {
   border-color: var(--green);
   color: var(--green);
-  background: rgba(57,255,20,.05);
+  background: rgba(232,163,61,.05);
+}
+
+.chip:active { transform: scale(.97); }
+
+/* ── Toast ── */
+.toast {
+  border-radius: 10px;
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface);
+  border: 1px solid var(--green);
+  color: var(--green);
+  padding: 12px 22px;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  box-shadow: 0 0 24px rgba(232,163,61,.25), inset 0 0 14px rgba(232,163,61,.06);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s, transform .18s;
+  z-index: 100;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* ── File list ── */
 .file-list { display: flex; flex-direction: column; gap: 2px; }
 
 .file-item {
+  border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -331,10 +396,10 @@ main {
   text-transform: uppercase;
 }
 
-.badge.images { color: var(--pink);  background: rgba(240,98,146,.1); }
-.badge.videos { color: var(--blue);  background: rgba(79,195,247,.1); }
-.badge.docs   { color: var(--amber); background: rgba(255,183,77,.1); }
-.badge.other  { color: var(--gray);  background: rgba(102,102,102,.1); }
+.badge.images { color: var(--pink);  background: rgba(232,143,181,.1); }
+.badge.videos { color: var(--blue);  background: rgba(143,201,232,.1); }
+.badge.docs   { color: var(--amber); background: rgba(217,178,106,.12); }
+.badge.other  { color: var(--gray);  background: rgba(138,127,109,.12); }
 
 .rm-btn {
   background: none;
@@ -353,6 +418,7 @@ main {
 /* ── Upload button ── */
 .progress {
   height: 2px;
+  border-radius: 2px;
   background: var(--border);
   overflow: hidden;
 }
@@ -367,6 +433,7 @@ main {
 
 .upload-btn {
   width: 100%;
+  border-radius: 10px;
   padding: 22px;
   background: transparent;
   border: 1px solid var(--green);
@@ -408,6 +475,7 @@ main {
 
 /* ── Results ── */
 .result-item {
+  border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -428,8 +496,17 @@ main {
   color: var(--text-dim);
 }
 
+.result-path.clickable {
+  cursor: pointer;
+  transition: color .15s;
+}
+
+.result-path.clickable:hover { color: var(--green); }
+.result-path.clickable:active { color: var(--green); opacity: .7; }
+
 .copy-btn {
   background: none;
+  border-radius: 6px;
   border: 1px solid var(--border-bright);
   color: var(--text-dim);
   font-family: inherit;
@@ -478,6 +555,10 @@ main {
       <span class="project-prefix">/home/claude/projects/</span>
       <input class="project-input" id="projectInput" type="text"
              placeholder="sin proyecto · se guardará en la raíz" autocomplete="off">
+    </div>
+    <div class="chips-row chips-row-recent" id="recentRow" style="display:none">
+      <span class="chips-sublabel">Recientes</span>
+      <div class="chips" id="chipsRecent"></div>
     </div>
     <div class="chips-row">
       <div class="chips" id="chips"></div>
@@ -615,8 +696,41 @@ function render() {
 }
 
 // ── Projects ──
-const chipsEl    = $('chips');
-const chipsEmpty = $('chipsEmpty');
+const chipsEl       = $('chips');
+const chipsEmpty    = $('chipsEmpty');
+const chipsRecentEl = $('chipsRecent');
+const recentRow     = $('recentRow');
+
+const RECENTS_KEY = 'vps-uploader.recent-image-projects';
+const RECENTS_MAX = 3;
+
+function getRecents() {
+  try {
+    const raw = localStorage.getItem(RECENTS_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.filter(p => typeof p === 'string') : [];
+  } catch { return []; }
+}
+
+function pushRecent(name) {
+  if (!name) return;
+  const next = [name, ...getRecents().filter(p => p !== name)].slice(0, RECENTS_MAX);
+  try { localStorage.setItem(RECENTS_KEY, JSON.stringify(next)); } catch {}
+}
+
+function renderRecents(allProjects) {
+  const valid = new Set(allProjects);
+  const recents = getRecents().filter(p => valid.has(p));
+  if (!recents.length) {
+    recentRow.style.display = 'none';
+    chipsRecentEl.innerHTML = '';
+    return;
+  }
+  recentRow.style.display = 'flex';
+  chipsRecentEl.innerHTML = recents.map(p =>
+    `<button class="chip chip-recent" data-name="${esc(p)}" onclick="onChipClick(event, this)">${esc(p)}</button>`
+  ).join('');
+}
 
 function loadProjects() {
   chipsEl.innerHTML = '<span style="color:var(--text-dim);font-size:11px">cargando…</span>';
@@ -624,6 +738,7 @@ function loadProjects() {
   fetch('/api/projects')
     .then(r => r.json())
     .then(list => {
+      renderRecents(list);
       if (!list.length) {
         chipsEl.innerHTML = '';
         chipsEmpty.style.display = 'inline';
@@ -631,18 +746,40 @@ function loadProjects() {
       }
       chipsEmpty.style.display = 'none';
       chipsEl.innerHTML = list.map(p =>
-        `<button class="chip" onclick="setProject('${esc(p)}')">${esc(p)}</button>`
+        `<button class="chip" data-name="${esc(p)}" onclick="onChipClick(event, this)">${esc(p)}</button>`
       ).join('');
     })
     .catch(() => {
       chipsEl.innerHTML = '';
       chipsEmpty.style.display = 'inline';
+      renderRecents([]);
     });
 }
 
 loadProjects();
 
 function setProject(name) { projectInput.value = name; }
+
+function onChipClick(e, btn) {
+  const name = btn.dataset.name;
+  const path = `/home/claude/projects/${name}`;
+  setProject(name);
+  copyText(path).then(() => showToast(`Copiado: ${path}`)).catch(() => {});
+}
+
+let toastEl = null;
+let toastTimer = null;
+function showToast(msg) {
+  if (!toastEl) {
+    toastEl = document.createElement('div');
+    toastEl.className = 'toast';
+    document.body.appendChild(toastEl);
+  }
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1600);
+}
 
 // ── Upload ──
 uploadBtn.addEventListener('click', async () => {
@@ -666,6 +803,10 @@ uploadBtn.addEventListener('click', async () => {
 
     const data = await res.json();
     renderResults(data);
+
+    const proj = projectInput.value.trim();
+    if (proj && data.some(r => r.ok && r.subdir === 'images')) pushRecent(proj);
+
     loadProjects();
 
     selected = [];
@@ -691,8 +832,7 @@ function renderResults(data) {
   results.innerHTML = data.map(r => {
     if (r.ok) {
       return `<div class="result-item">
-        <span class="result-path">${esc(r.path)}</span>
-        <button class="copy-btn" data-path="${esc(r.path)}" onclick="copyPath(this)">COPIAR</button>
+        <span class="result-path clickable" data-path="${esc(r.path)}" title="Click para copiar" onclick="copyPath(this)">${esc(r.path)}</span>
       </div>`;
     }
     return `<div class="result-item err">
@@ -730,12 +870,9 @@ function fallbackCopy(text) {
   });
 }
 
-function copyPath(btn) {
-  copyText(btn.dataset.path).then(() => {
-    btn.textContent = '✓ COPIADO';
-    btn.classList.add('ok');
-    setTimeout(() => { btn.textContent = 'COPIAR'; btn.classList.remove('ok'); }, 2000);
-  }).catch(() => {});
+function copyPath(el) {
+  const path = el.dataset.path;
+  copyText(path).then(() => showToast(`Copiado: ${path}`)).catch(() => {});
 }
 </script>
 </body>
